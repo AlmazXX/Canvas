@@ -1,5 +1,11 @@
+import Canvas from "./features/canvas/Canvas";
+
 const App = () => {
-  return <></>;
+  return (
+    <>
+      <Canvas />
+    </>
+  );
 };
 
 export default App;
