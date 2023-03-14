@@ -19,18 +19,18 @@ router.ws("/canvas", (ws) => {
   console.log("client connected! id =", id);
   activeConnections[id] = ws;
 
-  ws.send(JSON.stringify({ type: "INIT", data: pixels }));
+  ws.send(JSON.stringify({ type: "INIT", payload: pixels }));
 
   ws.on("message", (msg) => {
     const data = JSON.parse(msg.toString());
 
     switch (data.type) {
       case "DRAW":
-        pixels.push(...data.data);
+        pixels.push(...data.payload);
 
         Object.keys(activeConnections).forEach((id) => {
           const conn = activeConnections[id];
-          conn.send(JSON.stringify({ type: "DRAW", data }));
+          conn.send(JSON.stringify({ type: "DRAW", payload: data.payload }));
         });
         break;
       default:
