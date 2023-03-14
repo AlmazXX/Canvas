@@ -15,12 +15,6 @@ const styles = {
     border: "1px solid #000",
     borderRadius: "10px",
   },
-  clearBtn: {
-    padding: "10px",
-    background: "#fff",
-    borderRadius: "5px",
-    border: "1px solid #000",
-  },
 };
 
 const Canvas = () => {
@@ -56,24 +50,10 @@ const Canvas = () => {
     };
 
     function renderPixels(pixels: Pixel[]) {
-      if (!ctx) return;
-    
-      ctx.beginPath();
-      ctx.lineWidth = 5;
-      pixels.forEach(({ x, y, color }, index) => {
-        if (index === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = color;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(x, y, 2, 0, 2 * Math.PI);
+      pixels.forEach(({ x, y, color }) => {
+        if (!ctx) return;
         ctx.fillStyle = color;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x, y);
+        ctx.fillRect(x, y, 1, 1);
       });
     }
 
