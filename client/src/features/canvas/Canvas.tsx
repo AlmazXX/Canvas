@@ -1,5 +1,5 @@
-import { Draw } from "../../types";
-import useDraw from "./hooks/useDraw";
+import { useEffect, useRef } from "react";
+import { Point } from "../../types";
 
 const styles = {
   container: {
@@ -24,39 +24,123 @@ const styles = {
 };
 
 const Canvas = () => {
-  const drawLine = ({ prevPoint, currentPoint, ctx }: Draw) => {
-    const { x: currX, y: currY } = currentPoint;
-    const lineColor = "#000";
-    const lineWidth = 5;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ws = useRef<WebSocket>();
+  const prevPoint = useRef<Point | null>(null);
 
-    let startPoint = prevPoint ?? currentPoint;
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ws.current = new WebSocket("ws://localhost:8000/canvas");
+
+    ws.current.onopen = () => {
+      console.log("Websocket connection extablished");
+
+      ws.current?.send(JSON.stringify({ type: "INIT" }));
+    };
+
+    ws.current.onmessage = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+
+      switch (data.type) {
+        case "INIT":
+          renderPixels(data.data);
+          break;
+        case "DRAW":
+          renderPixels(data.data.data);
+        default:
+          break;
+      }
+    };
+
+    function renderPixels(pixels: { x: number; y: number; color: string }[]) {
+      pixels.forEach(({ x, y, color }) => {
+        if (!ctx) return;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, 1, 1);
+      });
+    }
+
+    function onMouseMove(e: MouseEvent) {
+      if (!canvasRef.current) return;
+
+      const currentPoint = getCursorPosition(canvasRef.current, e);
+
+      drawLineSegment(prevPoint.current, currentPoint, "#000");
+
+      ws.current?.send(
+        JSON.stringify({
+          type: "DRAW",
+          data: [{ x: currentPoint.x, y: currentPoint.y, color: "#000" }],
+        })
+      );
+
+      prevPoint.current = currentPoint;
+    }
+
+    function onMouseUp() {
+      if (!canvasRef.current) return;
+
+      canvasRef.current.removeEventListener("mousemove", onMouseMove);
+    }
+
+    function onMouseDown(e: MouseEvent) {
+      if (!canvasRef.current) return;
+
+      const { x, y } = getCursorPosition(canvasRef.current, e);
+
+      canvasRef.current.addEventListener("mousemove", onMouseMove);
+      canvasRef.current.addEventListener("mouseup", onMouseUp);
+    }
+
+    canvas.addEventListener("mousedown", onMouseDown);
+
+    return () => {
+      if (!canvasRef.current) return;
+
+      canvas.removeEventListener("mousedown", onMouseDown);
+      canvasRef.current.removeEventListener("mousemove", onMouseMove);
+      canvasRef.current.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  function getCursorPosition(
+    canvas: HTMLCanvasElement,
+    event: MouseEvent
+  ): Point {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    return { x, y };
+  }
+
+  function drawLineSegment(
+    prevPoint: Point | null,
+    currPoint: Point,
+    color: string
+  ) {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+
+    let startPoint = prevPoint ?? currPoint;
     ctx.beginPath();
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = color;
     ctx.moveTo(startPoint.x, startPoint.y);
-    ctx.lineTo(currX, currY);
+    ctx.lineTo(currPoint.x, currPoint.y);
     ctx.stroke();
 
-    ctx.fillStyle = lineColor;
+    ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(startPoint.x, startPoint.y, 2, 0, 2 * Math.PI);
     ctx.fill();
-  };
-
-  const { canvasRef, onMouseDown, onClear } = useDraw(drawLine);
+  }
 
   return (
     <div style={styles.container}>
-      <button onClick={onClear} style={styles.clearBtn}>
-        Clear canvas
-      </button>
-      <canvas
-        ref={canvasRef}
-        onMouseDown={onMouseDown}
-        width={750}
-        height={750}
-        style={styles.canvas}
-      />
+      <canvas ref={canvasRef} width={750} height={750} style={styles.canvas} />
     </div>
   );
 };
