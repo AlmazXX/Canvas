@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Point } from "../../types";
+import { Pixel, Point } from "../../types";
 
 const styles = {
   container: {
@@ -46,16 +46,16 @@ const Canvas = () => {
 
       switch (data.type) {
         case "INIT":
-          renderPixels(data.data);
+          renderPixels(data.payload);
           break;
         case "DRAW":
-          renderPixels(data.data.data);
+          renderPixels(data.payload);
         default:
           break;
       }
     };
 
-    function renderPixels(pixels: { x: number; y: number; color: string }[]) {
+    function renderPixels(pixels: Pixel[]) {
       pixels.forEach(({ x, y, color }) => {
         if (!ctx) return;
         ctx.fillStyle = color;
@@ -73,7 +73,7 @@ const Canvas = () => {
       ws.current?.send(
         JSON.stringify({
           type: "DRAW",
-          data: [{ x: currentPoint.x, y: currentPoint.y, color: "#000" }],
+          payload: [{ x: currentPoint.x, y: currentPoint.y, color: "#000" }],
         })
       );
 
