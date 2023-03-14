@@ -56,10 +56,24 @@ const Canvas = () => {
     };
 
     function renderPixels(pixels: Pixel[]) {
-      pixels.forEach(({ x, y, color }) => {
-        if (!ctx) return;
+      if (!ctx) return;
+    
+      ctx.beginPath();
+      ctx.lineWidth = 5;
+      pixels.forEach(({ x, y, color }, index) => {
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, 2 * Math.PI);
         ctx.fillStyle = color;
-        ctx.fillRect(x, y, 1, 1);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
       });
     }
 
