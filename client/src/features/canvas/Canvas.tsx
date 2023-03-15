@@ -50,9 +50,9 @@ const Canvas = () => {
     };
 
     function renderPixels(pixels: Pixel[]) {
-      pixels.forEach(({ x, y, color }) => {
+      pixels.forEach(({ x, y }) => {
         if (!ctx) return;
-        ctx.fillStyle = color;
+        ctx.fillStyle = "#000";
         ctx.fillRect(x, y, 1, 1);
       });
     }
@@ -62,12 +62,12 @@ const Canvas = () => {
 
       const currentPoint = getCursorPosition(canvasRef.current, e);
 
-      drawLineSegment(prevPoint.current, currentPoint, "#000");
+      drawLineSegment(prevPoint.current, currentPoint);
 
       ws.current?.send(
         JSON.stringify({
           type: "DRAW",
-          payload: [{ x: currentPoint.x, y: currentPoint.y, color: "#000" }],
+          payload: [{ x: currentPoint.x, y: currentPoint.y }],
         })
       );
 
@@ -110,23 +110,19 @@ const Canvas = () => {
     return { x, y };
   }
 
-  function drawLineSegment(
-    prevPoint: Point | null,
-    currPoint: Point,
-    color: string
-  ) {
+  function drawLineSegment(prevPoint: Point | null, currPoint: Point) {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
 
     let startPoint = prevPoint ?? currPoint;
     ctx.beginPath();
     ctx.lineWidth = 5;
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = "#000";
     ctx.moveTo(startPoint.x, startPoint.y);
     ctx.lineTo(currPoint.x, currPoint.y);
     ctx.stroke();
 
-    ctx.fillStyle = color;
+    ctx.fillStyle = "#000";
     ctx.beginPath();
     ctx.arc(startPoint.x, startPoint.y, 2, 0, 2 * Math.PI);
     ctx.fill();

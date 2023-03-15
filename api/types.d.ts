@@ -7,5 +7,4 @@ export interface ActiveConnections {
 export interface Pixel {
   x: number;
   y: number;
-  color: string;
 }
