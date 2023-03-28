@@ -1,49 +1,50 @@
-import { useEffect, useRef } from "react";
-import { Pixel, Point } from "../../types";
+import { useEffect, useRef } from 'react';
+import { Pixel } from '../../types';
 
 const styles = {
   container: {
-    display: "flex",
-    width: "100vw",
-    height: "100vh",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "20px",
-    background: "#fff",
+    display: 'flex',
+    width: '100vw',
+    height: '100vh',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '20px',
+    background: '#fff',
   },
   canvas: {
-    border: "1px solid #000",
-    borderRadius: "10px",
+    border: '1px solid #000',
+    borderRadius: '10px',
   },
 };
 
 const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ws = useRef<WebSocket>();
-  const prevPoint = useRef<Point | null>(null);
+  const prevPixel = useRef<Pixel | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ws.current = new WebSocket("ws://localhost:8000/canvas");
+    ws.current = new WebSocket('ws://localhost:8000/canvas');
 
     ws.current.onopen = () => {
-      console.log("Websocket connection extablished");
+      console.log('Websocket connection extablished');
 
-      ws.current?.send(JSON.stringify({ type: "INIT" }));
+      ws.current?.send(JSON.stringify({ type: 'INIT' }));
     };
 
     ws.current.onmessage = (e: MessageEvent) => {
       const data = JSON.parse(e.data);
 
       switch (data.type) {
-        case "INIT":
+        case 'INIT':
           renderPixels(data.payload);
           break;
-        case "DRAW":
-          renderPixels(data.payload);
+        case 'DRAW':
+          const currPixel = data.payload as Pixel;
+          drawLineSegment(prevPixel.current, currPixel);
+          prevPixel.current = currPixel;
         default:
           break;
       }
@@ -52,77 +53,57 @@ const Canvas = () => {
     function renderPixels(pixels: Pixel[]) {
       pixels.forEach(({ x, y }) => {
         if (!ctx) return;
-        ctx.fillStyle = "#000";
+        ctx.fillStyle = '#000';
         ctx.fillRect(x, y, 1, 1);
       });
     }
 
     function onMouseMove(e: MouseEvent) {
-      if (!canvasRef.current) return;
-
-      const currentPoint = getCursorPosition(canvasRef.current, e);
-
-      drawLineSegment(prevPoint.current, currentPoint);
-
       ws.current?.send(
         JSON.stringify({
-          type: "DRAW",
-          payload: [{ x: currentPoint.x, y: currentPoint.y }],
-        })
+          type: 'DRAW',
+          payload: { x: e.offsetX, y: e.offsetY },
+        }),
       );
-
-      prevPoint.current = currentPoint;
     }
 
     function onMouseUp() {
       if (!canvasRef.current) return;
 
-      canvasRef.current.removeEventListener("mousemove", onMouseMove);
+      canvasRef.current.removeEventListener('mousemove', onMouseMove);
+      prevPixel.current = null;
     }
 
-    function onMouseDown(e: MouseEvent) {
+    function onMouseDown() {
       if (!canvasRef.current) return;
 
-      const { x, y } = getCursorPosition(canvasRef.current, e);
-
-      canvasRef.current.addEventListener("mousemove", onMouseMove);
-      canvasRef.current.addEventListener("mouseup", onMouseUp);
+      canvasRef.current.addEventListener('mousemove', onMouseMove);
+      canvasRef.current.addEventListener('mouseup', onMouseUp);
     }
 
-    canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener('mousedown', onMouseDown);
 
     return () => {
       if (!canvasRef.current) return;
 
-      canvas.removeEventListener("mousedown", onMouseDown);
-      canvasRef.current.removeEventListener("mousemove", onMouseMove);
-      canvasRef.current.removeEventListener("mouseup", onMouseUp);
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvasRef.current.removeEventListener('mousemove', onMouseMove);
+      canvasRef.current.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
 
-  function getCursorPosition(
-    canvas: HTMLCanvasElement,
-    event: MouseEvent
-  ): Point {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    return { x, y };
-  }
+  function drawLineSegment(prevPixel: Pixel | null, currPixel: Pixel) {
+    const ctx = canvasRef.current?.getContext('2d') as CanvasRenderingContext2D;
 
-  function drawLineSegment(prevPoint: Point | null, currPoint: Point) {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-
-    let startPoint = prevPoint ?? currPoint;
+    let startPoint = prevPixel ?? currPixel;
     ctx.beginPath();
     ctx.lineWidth = 5;
-    ctx.strokeStyle = "#000";
+    ctx.strokeStyle = '#000';
     ctx.moveTo(startPoint.x, startPoint.y);
-    ctx.lineTo(currPoint.x, currPoint.y);
+    ctx.lineTo(currPixel.x, currPixel.y);
     ctx.stroke();
 
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = '#000';
     ctx.beginPath();
     ctx.arc(startPoint.x, startPoint.y, 2, 0, 2 * Math.PI);
     ctx.fill();
