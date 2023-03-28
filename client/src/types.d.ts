@@ -1,8 +1,9 @@
-export interface Point {
+export interface Pixel {
   x: number;
   y: number;
 }
 
-export interface Pixel extends Point {
-  color: string
+export interface Message {
+  type: string;
+  payload?: Pixel | Pixel[] | Pixel[][];
 }
