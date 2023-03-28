@@ -22,6 +22,10 @@ const LINE_WIDTH = 5;
 const LINE_COLOR = '#000';
 const POINT_RADIUS = 2;
 
+const broadcast = (webSocket: WebSocket, data: Message) => {
+  webSocket.send(JSON.stringify(data));
+};
+
 const drawLine = (
   ctx: CanvasRenderingContext2D,
   prevPixel: Pixel | null,
@@ -96,23 +100,16 @@ const Canvas = () => {
   };
 
   const onMouseMove = (e: MouseEvent) => {
-    ws.current?.send(
-      JSON.stringify({
-        type: 'DRAW',
-        payload: { x: e.offsetX, y: e.offsetY },
-      }),
-    );
+    broadcast(ws.current!, {
+      type: 'DRAW',
+      payload: { x: e.offsetX, y: e.offsetY },
+    });
   };
 
   const onMouseUp = () => {
     canvasRef.current?.removeEventListener('mousemove', onMouseMove);
 
-    ws.current?.send(
-      JSON.stringify({
-        type: 'STOP_DRAW',
-        payload: currPixels.current,
-      }),
-    );
+    broadcast(ws.current!, { type: 'STOP_DRAW', payload: currPixels.current });
 
     currPixels.current = [];
   };

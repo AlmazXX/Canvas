@@ -26,17 +26,11 @@ router.ws('/canvas', (ws) => {
 
     switch (data.type) {
       case 'DRAW':
-        Object.keys(activeConnections).forEach((id) => {
-          const conn = activeConnections[id];
-          conn.send(JSON.stringify({ type: 'DRAW', payload: data.payload }));
-        });
+        broadcast({ type: 'DRAW', payload: data.payload as Pixel });
         break;
       case 'STOP_DRAW':
         lines.push(data.payload as Pixel[]);
-        Object.keys(activeConnections).forEach((id) => {
-          const conn = activeConnections[id];
-          conn.send(JSON.stringify({ type: 'STOP_DRAW' }));
-        });
+        broadcast({ type: 'STOP_DRAW' });
         break;
       default:
         break;
@@ -47,6 +41,13 @@ router.ws('/canvas', (ws) => {
     console.log('Client disconnected! id =', id);
     delete activeConnections[id];
   });
+
+  const broadcast = (data: Message) => {
+    Object.keys(activeConnections).forEach((id) => {
+      const conn = activeConnections[id];
+      conn.send(JSON.stringify(data));
+    });
+  };
 });
 
 app.use(router);
