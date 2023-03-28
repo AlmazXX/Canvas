@@ -32,6 +32,9 @@ router.ws('/canvas', (ws) => {
         lines.push(data.payload as Pixel[]);
         broadcast({ type: 'STOP_DRAW' });
         break;
+      case 'CLEAR':
+        lines = [];
+        broadcast({ type: 'CLEAR' });
       default:
         break;
     }

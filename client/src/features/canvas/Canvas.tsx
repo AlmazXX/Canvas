@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { CSSProperties, useEffect, useRef } from 'react';
 import { Message, Pixel } from '../../types';
 
 const styles = {
   container: {
     display: 'flex',
+    flexDirection: 'column',
     width: '100vw',
     height: '100vh',
     justifyContent: 'center',
@@ -14,6 +15,12 @@ const styles = {
   canvas: {
     border: '1px solid #000',
     borderRadius: '10px',
+  },
+  btn: {
+    background: '#fff',
+    padding: 'calc(.875rem - 1px) calc(1.5rem - 1px)',
+    border: '1px solid rgba(0, 0, 0, 0.1)',
+    borderRadius: '.25rem',
   },
 };
 
@@ -43,6 +50,12 @@ const drawLine = (
   ctx.beginPath();
   ctx.arc(startPoint.x, startPoint.y, POINT_RADIUS, 0, 2 * Math.PI);
   ctx.fill();
+};
+
+const clear = (canvas: HTMLCanvasElement) => {
+  const ctx = canvas.getContext('2d');
+
+  ctx?.clearRect(0, 0, canvas.width, canvas.height);
 };
 
 const Canvas = () => {
@@ -83,6 +96,10 @@ const Canvas = () => {
       if (data.type === 'STOP_DRAW') {
         prevPixel.current = null;
       }
+
+      if (data.type === 'CLEAR') {
+        clear(canvas);
+      }
     };
 
     canvas.addEventListener('mousedown', onMouseDown);
@@ -114,14 +131,21 @@ const Canvas = () => {
     currPixels.current = [];
   };
 
+  const onClear = () => {
+    broadcast(ws.current!, { type: 'CLEAR' });
+  };
+
   return (
-    <div style={styles.container}>
+    <div style={styles.container as CSSProperties}>
       <canvas
         ref={canvasRef}
         width={CANVAS_SIDE}
         height={CANVAS_SIDE}
         style={styles.canvas}
       />
+      <button style={styles.btn} onClick={onClear}>
+        Clear
+      </button>
     </div>
   );
 };
