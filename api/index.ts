@@ -12,14 +12,14 @@ app.use(cors());
 const router = express.Router();
 
 const activeConnections: ActiveConnections = {};
-let pixels: Pixel[] = [];
+let lines: Pixel[][] = [];
 
 router.ws('/canvas', (ws) => {
   const id = randomUUID();
   console.log('client connected! id =', id);
   activeConnections[id] = ws;
 
-  ws.send(JSON.stringify({ type: 'INIT', payload: pixels }));
+  ws.send(JSON.stringify({ type: 'INIT', payload: lines }));
 
   ws.on('message', (msg) => {
     const data = JSON.parse(msg.toString()) as Message;
@@ -29,6 +29,13 @@ router.ws('/canvas', (ws) => {
         Object.keys(activeConnections).forEach((id) => {
           const conn = activeConnections[id];
           conn.send(JSON.stringify({ type: 'DRAW', payload: data.payload }));
+        });
+        break;
+      case 'STOP_DRAW':
+        lines.push(data.payload as Pixel[]);
+        Object.keys(activeConnections).forEach((id) => {
+          const conn = activeConnections[id];
+          conn.send(JSON.stringify({ type: 'STOP_DRAW' }));
         });
         break;
       default:

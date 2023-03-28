@@ -44,6 +44,7 @@ const drawLine = (
 const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ws = useRef<WebSocket>();
+  const currPixels = useRef<Pixel[]>([]);
   const prevPixel = useRef<Pixel | null>(null);
 
   useEffect(() => {
@@ -54,8 +55,6 @@ const Canvas = () => {
 
     ws.current.onopen = () => {
       console.log('Websocket connection extablished');
-
-      ws.current?.send(JSON.stringify({ type: 'INIT' }));
     };
 
     ws.current.onmessage = (e: MessageEvent) => {
@@ -63,24 +62,25 @@ const Canvas = () => {
 
       switch (data.type) {
         case 'INIT':
-          renderPixels(data.payload);
+          const existingLines = data.payload as Pixel[][];
+          existingLines.forEach((pixels) => {
+            for (let i = 1; i < pixels.length; ++i) {
+              drawLine(ctx, pixels[i - 1], pixels[i]);
+            }
+          });
           break;
         case 'DRAW':
           const currPixel = data.payload as Pixel;
           drawLine(ctx, prevPixel.current, currPixel);
+          currPixels.current = [...currPixels.current, currPixel];
           prevPixel.current = currPixel;
+        case 'STOP_DRAW':
+          prevPixel.current = null;
+          break;
         default:
           break;
       }
     };
-
-    function renderPixels(pixels: Pixel[]) {
-      pixels.forEach(({ x, y }) => {
-        if (!ctx) return;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x, y, 1, 1);
-      });
-    }
 
     function onMouseMove(e: MouseEvent) {
       ws.current?.send(
@@ -92,10 +92,16 @@ const Canvas = () => {
     }
 
     function onMouseUp() {
-      if (!canvasRef.current) return;
+      canvasRef.current?.removeEventListener('mousemove', onMouseMove);
 
-      canvasRef.current.removeEventListener('mousemove', onMouseMove);
-      prevPixel.current = null;
+      ws.current?.send(
+        JSON.stringify({
+          type: 'STOP_DRAW',
+          payload: currPixels.current,
+        }),
+      );
+
+      currPixels.current = [];
     }
 
     function onMouseDown() {
@@ -108,11 +114,9 @@ const Canvas = () => {
     canvas.addEventListener('mousedown', onMouseDown);
 
     return () => {
-      if (!canvasRef.current) return;
-
       canvas.removeEventListener('mousedown', onMouseDown);
-      canvasRef.current.removeEventListener('mousemove', onMouseMove);
-      canvasRef.current.removeEventListener('mouseup', onMouseUp);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
 
