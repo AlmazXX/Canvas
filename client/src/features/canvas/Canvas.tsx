@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useRef } from 'react';
+import { CSSProperties, useCallback, useEffect, useRef } from 'react';
 import { Message, Pixel } from '../../types';
 
 const styles = {
@@ -110,29 +110,29 @@ const Canvas = () => {
     };
   }, []);
 
-  const onMouseDown = () => {
+  const onMouseDown = useCallback(() => {
     canvasRef.current?.addEventListener('mousemove', onMouseMove);
     canvasRef.current?.addEventListener('mouseup', onMouseUp);
-  };
+  }, []);
 
-  const onMouseMove = (e: MouseEvent) => {
+  const onMouseMove = useCallback((e: MouseEvent) => {
     broadcast(ws.current!, {
       type: 'DRAW',
       payload: { x: e.offsetX, y: e.offsetY },
     });
-  };
+  }, []);
 
-  const onMouseUp = () => {
+  const onMouseUp = useCallback(() => {
     canvasRef.current?.removeEventListener('mousemove', onMouseMove);
 
     broadcast(ws.current!, { type: 'STOP_DRAW', payload: currPixels.current });
 
     currPixels.current = [];
-  };
+  }, []);
 
-  const onClear = () => {
+  const onClear = useCallback(() => {
     broadcast(ws.current!, { type: 'CLEAR' });
-  };
+  }, []);
 
   return (
     <div style={styles.container as CSSProperties}>
