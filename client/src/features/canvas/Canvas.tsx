@@ -53,9 +53,8 @@ const drawLine = (
 };
 
 const clear = (canvas: HTMLCanvasElement) => {
-  const ctx = canvas.getContext('2d');
-
-  ctx?.clearRect(0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
 const Canvas = () => {
