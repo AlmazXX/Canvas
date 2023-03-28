@@ -82,35 +82,6 @@ const Canvas = () => {
       }
     };
 
-    function onMouseMove(e: MouseEvent) {
-      ws.current?.send(
-        JSON.stringify({
-          type: 'DRAW',
-          payload: { x: e.offsetX, y: e.offsetY },
-        }),
-      );
-    }
-
-    function onMouseUp() {
-      canvasRef.current?.removeEventListener('mousemove', onMouseMove);
-
-      ws.current?.send(
-        JSON.stringify({
-          type: 'STOP_DRAW',
-          payload: currPixels.current,
-        }),
-      );
-
-      currPixels.current = [];
-    }
-
-    function onMouseDown() {
-      if (!canvasRef.current) return;
-
-      canvasRef.current.addEventListener('mousemove', onMouseMove);
-      canvasRef.current.addEventListener('mouseup', onMouseUp);
-    }
-
     canvas.addEventListener('mousedown', onMouseDown);
 
     return () => {
@@ -119,6 +90,33 @@ const Canvas = () => {
       canvas.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
+
+  const onMouseDown = () => {
+    canvasRef.current?.addEventListener('mousemove', onMouseMove);
+    canvasRef.current?.addEventListener('mouseup', onMouseUp);
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    ws.current?.send(
+      JSON.stringify({
+        type: 'DRAW',
+        payload: { x: e.offsetX, y: e.offsetY },
+      }),
+    );
+  };
+
+  const onMouseUp = () => {
+    canvasRef.current?.removeEventListener('mousemove', onMouseMove);
+
+    ws.current?.send(
+      JSON.stringify({
+        type: 'STOP_DRAW',
+        payload: currPixels.current,
+      }),
+    );
+
+    currPixels.current = [];
+  };
 
   return (
     <div style={styles.container}>
