@@ -22,6 +22,25 @@ const LINE_WIDTH = 5;
 const LINE_COLOR = '#000';
 const POINT_RADIUS = 2;
 
+const drawLine = (
+  ctx: CanvasRenderingContext2D,
+  prevPixel: Pixel | null,
+  currPixel: Pixel,
+) => {
+  let startPoint = prevPixel ?? currPixel;
+  ctx.beginPath();
+  ctx.lineWidth = LINE_WIDTH;
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.moveTo(startPoint.x, startPoint.y);
+  ctx.lineTo(currPixel.x, currPixel.y);
+  ctx.stroke();
+
+  ctx.fillStyle = LINE_COLOR;
+  ctx.beginPath();
+  ctx.arc(startPoint.x, startPoint.y, POINT_RADIUS, 0, 2 * Math.PI);
+  ctx.fill();
+};
+
 const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ws = useRef<WebSocket>();
@@ -48,7 +67,7 @@ const Canvas = () => {
           break;
         case 'DRAW':
           const currPixel = data.payload as Pixel;
-          drawLineSegment(prevPixel.current, currPixel);
+          drawLine(ctx, prevPixel.current, currPixel);
           prevPixel.current = currPixel;
         default:
           break;
@@ -96,23 +115,6 @@ const Canvas = () => {
       canvasRef.current.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
-
-  function drawLineSegment(prevPixel: Pixel | null, currPixel: Pixel) {
-    const ctx = canvasRef.current?.getContext('2d') as CanvasRenderingContext2D;
-
-    let startPoint = prevPixel ?? currPixel;
-    ctx.beginPath();
-    ctx.lineWidth = LINE_WIDTH;
-    ctx.strokeStyle = LINE_COLOR;
-    ctx.moveTo(startPoint.x, startPoint.y);
-    ctx.lineTo(currPixel.x, currPixel.y);
-    ctx.stroke();
-
-    ctx.fillStyle = LINE_COLOR;
-    ctx.beginPath();
-    ctx.arc(startPoint.x, startPoint.y, POINT_RADIUS, 0, 2 * Math.PI);
-    ctx.fill();
-  }
 
   return (
     <div style={styles.container}>
