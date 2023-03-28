@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Pixel } from '../../types';
+import { Message, Pixel } from '../../types';
 
 const styles = {
   container: {
@@ -58,27 +58,26 @@ const Canvas = () => {
     };
 
     ws.current.onmessage = (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
+      const data = JSON.parse(e.data) as Message;
 
-      switch (data.type) {
-        case 'INIT':
-          const existingLines = data.payload as Pixel[][];
-          existingLines.forEach((pixels) => {
-            for (let i = 1; i < pixels.length; ++i) {
-              drawLine(ctx, pixels[i - 1], pixels[i]);
-            }
-          });
-          break;
-        case 'DRAW':
-          const currPixel = data.payload as Pixel;
-          drawLine(ctx, prevPixel.current, currPixel);
-          currPixels.current = [...currPixels.current, currPixel];
-          prevPixel.current = currPixel;
-        case 'STOP_DRAW':
-          prevPixel.current = null;
-          break;
-        default:
-          break;
+      if (data.type === 'INIT') {
+        const existingLines = data.payload as Pixel[][];
+        existingLines.forEach((pixels) => {
+          for (let i = 1; i < pixels.length; ++i) {
+            drawLine(ctx, pixels[i - 1], pixels[i]);
+          }
+        });
+      }
+
+      if (data.type === 'DRAW') {
+        const currPixel = data.payload as Pixel;
+        drawLine(ctx, prevPixel.current, currPixel);
+        currPixels.current = [...currPixels.current, currPixel];
+        prevPixel.current = currPixel;
+      }
+
+      if (data.type === 'STOP_DRAW') {
+        prevPixel.current = null;
       }
     };
 
