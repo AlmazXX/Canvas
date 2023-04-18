@@ -2,6 +2,10 @@
 
 This is a web application that allows multiple users to collaborate and draw on a shared canvas in real-time. The application is built using Express-WS on the backend, and React and JS WebSocket on the frontend.
 
+## Demo
+
+![Demo](https://github.com/AlmazXX/Canvas/blob/master/demo/canvas-demo.gif)
+
 ## Getting started
 
 ### Prerequisites
