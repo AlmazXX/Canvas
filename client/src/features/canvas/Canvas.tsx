@@ -1,4 +1,4 @@
-import { CSSProperties, useCallback, useEffect, useRef } from 'react';
+import React from 'react';
 import { Message, Pixel } from '../../types';
 
 const styles = {
@@ -38,7 +38,7 @@ const drawLine = (
   prevPixel: Pixel | null,
   currPixel: Pixel,
 ) => {
-  let startPoint = prevPixel ?? currPixel;
+  const startPoint = prevPixel ?? currPixel;
   ctx.beginPath();
   ctx.lineWidth = LINE_WIDTH;
   ctx.strokeStyle = LINE_COLOR;
@@ -58,12 +58,34 @@ const clear = (canvas: HTMLCanvasElement) => {
 };
 
 const Canvas = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ws = useRef<WebSocket>();
-  const currPixels = useRef<Pixel[]>([]);
-  const prevPixel = useRef<Pixel | null>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const ws = React.useRef<WebSocket>();
+  const currPixels = React.useRef<Pixel[]>([]);
+  const prevPixel = React.useRef<Pixel | null>(null);
 
-  useEffect(() => {
+  const onMouseMove = React.useCallback((e: MouseEvent) => {
+    ws.current &&
+      broadcast(ws.current, {
+        type: 'DRAW',
+        payload: { x: e.offsetX, y: e.offsetY },
+      });
+  }, []);
+
+  const onMouseUp = React.useCallback(() => {
+    canvasRef.current?.removeEventListener('mousemove', onMouseMove);
+
+    ws.current &&
+      broadcast(ws.current, { type: 'STOP_DRAW', payload: currPixels.current });
+
+    currPixels.current = [];
+  }, [onMouseMove]);
+
+  const onMouseDown = React.useCallback(() => {
+    canvasRef.current?.addEventListener('mousemove', onMouseMove);
+    canvasRef.current?.addEventListener('mouseup', onMouseUp);
+  }, [onMouseMove, onMouseUp]);
+
+  React.useEffect(() => {
     const canvas = canvasRef.current as HTMLCanvasElement;
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
@@ -108,34 +130,14 @@ const Canvas = () => {
       canvas.removeEventListener('mousemove', onMouseMove);
       canvas.removeEventListener('mouseup', onMouseUp);
     };
-  }, []);
+  }, [onMouseUp, onMouseMove, onMouseDown]);
 
-  const onMouseDown = useCallback(() => {
-    canvasRef.current?.addEventListener('mousemove', onMouseMove);
-    canvasRef.current?.addEventListener('mouseup', onMouseUp);
-  }, []);
-
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    broadcast(ws.current!, {
-      type: 'DRAW',
-      payload: { x: e.offsetX, y: e.offsetY },
-    });
-  }, []);
-
-  const onMouseUp = useCallback(() => {
-    canvasRef.current?.removeEventListener('mousemove', onMouseMove);
-
-    broadcast(ws.current!, { type: 'STOP_DRAW', payload: currPixels.current });
-
-    currPixels.current = [];
-  }, []);
-
-  const onClear = useCallback(() => {
-    broadcast(ws.current!, { type: 'CLEAR' });
+  const onClear = React.useCallback(() => {
+    ws.current && broadcast(ws.current, { type: 'CLEAR' });
   }, []);
 
   return (
-    <div style={styles.container as CSSProperties}>
+    <div style={styles.container as React.CSSProperties}>
       <canvas
         ref={canvasRef}
         width={CANVAS_SIDE}

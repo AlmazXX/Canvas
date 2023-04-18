@@ -35,6 +35,7 @@ router.ws('/canvas', (ws) => {
       case 'CLEAR':
         lines = [];
         broadcast({ type: 'CLEAR' });
+        break;
       default:
         break;
     }
