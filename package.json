@@ -7,6 +7,9 @@
     "pre-commit-all": "npm-run-all --parallel lint:*",
     "lint:api": "cd api && npm run typecheck && npm run lint",
     "lint:client": "cd client && npm run typecheck && npm run lint",
+    "install-all": "npm-run-all --parallel install:*",
+    "install:api": "cd api && npm install",
+    "install:client": "cd client && npm install",
     "prepare": "husky install"
   },
   "keywords": [],
